@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
+  <title>カレー部 🍛 文化祭運営アプリ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* ========== CSS 変数（テーマシステム） ========== */
+    :root {
+      --apple-blue:     #ff6b2b;
+      --apple-gray:     #8e8e93;
+      --apple-bg:       #f5f5f7;
+      --apple-card:     rgba(255,255,255,0.8);
+      --apple-text:     #1d1d1f;
+      --apple-sub-text: #86868b;
+      --apple-green:    #34c759;
+      --apple-red:      #ff3b30;
+      --gold:           #ffcc00;
+      --header-bg:      rgba(255,255,255,0.7);
+      --header-border:  rgba(0,0,0,0.1);
+      --card-bg:        white;
+      --input-bg:       rgba(255,255,255,0.5);
+      --input-border:   #d2d2d7;
+      --settings-row-bg:#ffffff;
+      --navbar-bg:      rgba(255,255,255,0.88);
+      --accent-orange:  #ff6b2b;
+      --accent-gold:    #ffab40;
+    }
+    [data-theme="dark"] {
+      --apple-bg:       #1c1c1e;
+      --apple-card:     rgba(44,44,46,0.9);
+      --apple-text:     #f5f5f7;
+      --apple-sub-text: #98989d;
+      --header-bg:      rgba(28,28,30,0.85);
+      --header-border:  rgba(255,255,255,0.1);
+      --card-bg:        #2c2c2e;
+      --input-bg:       rgba(60,60,62,0.8);
+      --input-border:   #48484a;
+      --settings-row-bg:#2c2c2e;
+      --navbar-bg:      rgba(28,28,30,0.9);
+    }
+
+    html { overscroll-behavior: none; -webkit-overflow-scrolling: touch; height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+      background: var(--apple-bg);
+      margin: 0; padding: 0;
+      color: var(--apple-text);
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.3s, color 0.3s;
+      overscroll-behavior-y: none;
+      height: 100%;
+      overflow: hidden;
+    }
+    #scroll-wrapper {
+      height: calc(100vh - 60px - env(safe-area-inset-bottom));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: none;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
+      box-sizing: border-box;
+    }
+    .header {
+      background: var(--header-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: var(--apple-text);
+      padding: 44px 20px 16px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 0.5px solid var(--header-border);
+    }
+    .header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+    .header-emoji { font-size: 28px; }
+    .header p { margin: 3px 0 0; font-size: 13px; color: var(--accent-orange); font-weight: 600; }
+    .refresh-icon { position: absolute; right: 20px; top: 46px; cursor: pointer; color: var(--accent-orange); }
+
+    /* ===== ナビバー ===== */
+    .navbar {
+      position: fixed; bottom: 0; left: 0; width: 100%;
+      background: var(--navbar-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      border-top: 0.5px solid var(--header-border);
+      z-index: 2100;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-sizing: border-box;
+      min-height: 60px;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: transform;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; color: var(--apple-gray); border: none; background: none;
+      transition: 0.2s; padding: 8px 0; min-height: 50px; cursor: pointer;
+    }
+    .nav-item.active { color: var(--accent-orange); }
+    .nav-item i { margin-bottom: 3px; width: 22px; height: 22px; }
+    .nav-text { font-size: 9px; font-weight: 600; letter-spacing: 0.2px; }
+
+    /* ===== 汎用カード ===== */
+    .card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.05);
+      animation: fadeIn 0.4s cubic-bezier(0.2,0.8,0.2,1);
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .container { padding: 12px 16px; }
+    .section-title {
+      font-size: 12px; font-weight: 700; color: var(--apple-sub-text);
+      text-transform: uppercase; letter-spacing: 0.6px; margin: 20px 0 8px;
+    }
+
+    /* ===== トースト ===== */
+    #toast {
+      position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.75); color: white; padding: 12px 24px;
+      border-radius: 25px; font-size: 14px; font-weight: 500;
+      z-index: 4000; display: none;
+      backdrop-filter: blur(10px);
+      animation: fadeInDown 0.4s ease;
+    }
+    @keyframes fadeInDown { from{opacity:0;transform:translate(-50%,-20px)} to{opacity:1;transform:translate(-50%,0)} }
+
+    /* ===== ボタン ===== */
+    .primary-btn {
+      width: 100%; padding: 15px; border-radius: 14px;
+      background: var(--accent-orange); color: white; border: none;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+    .primary-btn:active { transform: scale(0.97); opacity: 0.9; }
+    .secondary-btn { background: none; border: none; color: var(--accent-orange); font-size: 15px; cursor: pointer; font-weight: 600; }
+    .danger-btn {
+      background: var(--apple-red); color: white; border: none;
+      padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .ghost-btn {
+      background: rgba(0,0,0,0.06); color: var(--apple-text); border: none;
+      padding: 11px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    [data-theme="dark"] .ghost-btn { background: rgba(255,255,255,0.1); }
+
+    /* ===== インプット ===== */
+    input[type="text"], input[type="number"], input[type="date"], textarea, select {
+      width: 100%; padding: 13px 15px; border-radius: 12px;
+      border: 1.5px solid var(--input-border);
+      background: var(--input-bg); color: var(--apple-text);
+      font-size: 16px; font-family: inherit; box-sizing: border-box;
+      outline: none; transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent-orange); }
+    textarea { resize: none; height: 90px; }
+    label.input-label { font-size: 13px; font-weight: 600; color: var(--apple-sub-text); display: block; margin-bottom: 6px; }
+
+    /* ===== トグルスイッチ ===== */
+    .toggle-switch {
+      width: 50px; height: 28px; border-radius: 14px;
+      background: #e5e5ea; position: relative; cursor: pointer;
+      transition: background 0.3s; flex-shrink: 0;
+    }
+    .toggle-switch.on { background: var(--apple-green); }
+    .toggle-knob {
+      position: absolute; top: 3px; left: 3px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      transition: transform 0.3s cubic-bezier(0.2,0.8,0.2,1);
+    }
+    .toggle-switch.on .toggle-knob { transform: translateX(22px); }
+
+    /* ===== 設定行 ===== */
+    .settings-row { background: var(--settings-row-bg); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 14px; }
+    .settings-item {
+      display: flex; align-items: center; padding: 14px 16px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.06); cursor: pointer; gap: 12px;
+    }
+    .settings-item:last-child { border-bottom: none; }
+    .settings-item-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .settings-item-title { font-size: 15px; font-weight: 500; }
+    .settings-item-sub { font-size: 12px; color: var(--apple-sub-text); margin-top: 2px; }
+    .settings-section-title { font-size: 13px; font-weight: 700; color: var(--apple-sub-text); margin: 20px 0 8px; padding-left: 4px; }
+
+    /* ===== レジ画面 ===== */
+    .register-big-btn {
+      background: linear-gradient(145deg, #ff6b2b, #ff8c5a);
+      color: white; border: none; border-radius: 22px;
+      width: 100%; padding: 32px 20px;
+      font-size: 22px; font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(255,107,43,0.35);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      transition: transform 0.12s, box-shadow 0.12s;
+      position: relative; overflow: hidden;
+    }
+    .register-big-btn:active { transform: scale(0.96); box-shadow: 0 4px 15px rgba(255,107,43,0.25); }
+    .register-big-btn::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 120px; height: 120px; background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+    }
+    .register-big-btn .btn-price { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
+    .register-big-btn .btn-sub { font-size: 14px; font-weight: 600; opacity: 0.9; }
+    .sales-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .stat-card {
+      background: var(--card-bg); border-radius: 16px; padding: 18px 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center;
+    }
+    .stat-card .stat-val { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .stat-card .stat-lbl { font-size: 12px; color: var(--apple-sub-text); font-weight: 600; }
+    .stock-bar-wrap { background: rgba(0,0,0,0.06); border-radius: 10px; height: 12px; overflow: hidden; margin: 10px 0 6px; }
+    .stock-bar { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #34c759, #00c853); transition: width 0.6s cubic-bezier(0.2,0.8,0.2,1); }
+    .stock-bar.medium { background: linear-gradient(90deg, #ff9f0a, #ffab40); }
+    .stock-bar.low { background: linear-gradient(90deg, #ff3b30, #ff6b6b); animation: pulse-bar 1s infinite alternate; }
+    @keyframes pulse-bar { from{opacity:0.7} to{opacity:1} }
+    .aupay-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: linear-gradient(135deg, #00b900, #009900);
+      color: white; padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+    }
+    .confirm-sheet {
+      position: fixed; bottom: 0; left: 0; width: 100%;
+      background: var(--card-bg);
+      border-radius: 24px 24px 0 0;
+      padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px);
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+      z-index: 3000;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+      box-sizing: border-box;
+    }
+    .confirm-sheet.open { transform: translateY(0); }
+    .sheet-handle { width: 36px; height: 5px; background: rgba(0,0,0,0.15); border-radius: 99px; margin: 0 auto 20px; }
+    .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 2900; display: none; backdrop-filter: blur(4px); }
+    .confirm-overlay.open { display: block; }
+    .recent-sales-list { max-height: 220px; overflow-y: auto; }
+    .sale-log-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 0.5px solid rgba(0,0,0,0.07); gap: 10px; }
+    .sale-log-item:last-child { border-bottom: none; }
+    .sale-log-time { font-size: 13px; color: var(--apple-sub-text); font-weight: 500; flex-shrink: 0; }
+    .sale-log-amount { font-size: 16px; font-weight: 700; color: var(--accent-orange); margin-left: auto; }
+
+    /* ===== シフト画面 ===== */
+    .name-chip-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+    .name-chip {
+      padding: 10px 18px; border-radius: 20px;
+      background: var(--card-bg); border: 2px solid transparent;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: all 0.15s;
+    }
+    .name-chip.selected { background: var(--accent-orange); color: white; border-color: var(--accent-orange); }
+    .position-card {
+      background: linear-gradient(135deg, var(--accent-orange), #ff8c5a);
+      color: white; border-radius: 20px; padding: 24px;
+      margin-bottom: 16px; box-shadow: 0 8px 30px rgba(255,107,43,0.3);
+    }
+    .position-card .pos-time { font-size: 13px; font-weight: 700; opacity: 0.85; margin-bottom: 4px; }
+    .position-card .pos-role { font-size: 30px; font-weight: 900; margin-bottom: 6px; }
+    .position-card .pos-break { font-size: 14px; font-weight: 600; opacity: 0.9; }
+    .hygiene-check-item {
+      display: flex; align-items: center; padding: 16px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.07); gap: 14px; cursor: pointer;
+    }
+    .hygiene-check-item:last-child { border-bottom: none; }
+    .check-circle {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2.5px solid var(--input-border);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.2s; cursor: pointer;
+    }
+    .check-circle.done { background: var(--apple-green); border-color: var(--apple-green); }
+    .check-label { font-size: 15px; font-weight: 500; flex: 1; }
+    .check-label.done { text-decoration: line-through; color: var(--apple-sub-text); }
+    .person-check-row { display: flex; flex-direction: column; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
+    .person-check-row:last-child { border-bottom: none; }
+    .person-check-header { display: flex; align-items: center; padding: 12px 16px; gap: 10px; }
+    .person-check-name { font-size: 15px; font-weight: 600; flex: 1; }
+    .hygiene-checks-inner { padding: 0 16px 10px 48px; display: flex; flex-direction: column; gap: 8px; }
+    .mini-check { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .mini-check-box {
+      width: 22px; height: 22px; border-radius: 6px;
+      border: 2px solid var(--input-border);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.2s;
+    }
+    .mini-check-box.done { background: var(--apple-green); border-color: var(--apple-green); }
+
+    /* ===== 予算画面 ===== */
+    .budget-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .budget-tile {
+      background: var(--card-bg); border-radius: 14px; padding: 14px 12px;
+      text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .budget-tile .tile-val { font-size: 20px; font-weight: 800; margin-bottom: 2px; }
+    .budget-tile .tile-lbl { font-size: 11px; color: var(--apple-sub-text); font-weight: 600; }
+    .sim-result-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px; border-bottom: 0.5px solid rgba(0,0,0,0.07);
+    }
+    .sim-result-row:last-child { border-bottom: none; }
+    .sim-result-row.cheapest { background: rgba(52,199,89,0.08); }
+    .sim-cheapest-badge {
+      font-size: 10px; font-weight: 800; background: var(--apple-green);
+      color: white; padding: 2px 8px; border-radius: 99px;
+    }
+    .receipt-card { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid rgba(0,0,0,0.07); }
+    .receipt-card:last-child { border-bottom: none; }
+    .receipt-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: #f2f2f7; flex-shrink: 0; }
+    .receipt-info { flex: 1; min-width: 0; }
+    .receipt-amount { font-size: 17px; font-weight: 800; color: var(--accent-orange); }
+    .receipt-meta { font-size: 12px; color: var(--apple-sub-text); margin-top: 3px; }
+    .shopping-item {
+      display: flex; align-items: center; padding: 13px 16px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.07); gap: 12px;
+    }
+    .shopping-item:last-child { border-bottom: none; }
+    .shopping-item.bought .shop-name { text-decoration: line-through; color: var(--apple-sub-text); }
+
+    /* ===== タスク画面 ===== */
+    .task-card {
+      background: var(--card-bg); border-radius: 16px; padding: 16px;
+      margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      animation: fadeIn 0.35s ease; position: relative;
+      border-left: 4px solid transparent;
+    }
+    .task-card.todo { border-left-color: var(--apple-gray); }
+    .task-card.doing { border-left-color: var(--accent-orange); }
+    .task-card.done { border-left-color: var(--apple-green); opacity: 0.7; }
+    .task-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .task-title.done-text { text-decoration: line-through; color: var(--apple-sub-text); }
+    .task-status-badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 3px 10px; border-radius: 99px; margin-bottom: 8px;
+    }
+    .badge-todo { background: rgba(142,142,147,0.15); color: var(--apple-gray); }
+    .badge-doing { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+    .badge-done { background: rgba(52,199,89,0.15); color: var(--apple-green); }
+    .task-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .task-actions button { padding: 6px 14px; border-radius: 99px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-todo { background: rgba(142,142,147,0.15); color: var(--apple-gray); }
+    .btn-doing { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+    .btn-done { background: rgba(52,199,89,0.15); color: var(--apple-green); }
+    .btn-del { background: rgba(255,59,48,0.1); color: var(--apple-red); }
+    .memo-post { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); animation: fadeIn 0.35s ease; }
+    .memo-author { font-size: 13px; font-weight: 700; color: var(--accent-orange); margin-bottom: 4px; }
+    .memo-content { font-size: 15px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+    .memo-time { font-size: 11px; color: var(--apple-sub-text); margin-top: 8px; }
+
+    /* ===== マニュアル・FAQ ===== */
+    .faq-item { background: var(--card-bg); border-radius: 16px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+    .faq-q {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 18px; cursor: pointer; gap: 12px;
+    }
+    .faq-q-text { font-size: 15px; font-weight: 600; flex: 1; }
+    .faq-chevron { transition: transform 0.3s cubic-bezier(0.2,0.8,0.2,1); color: var(--apple-sub-text); flex-shrink: 0; }
+    .faq-chevron.open { transform: rotate(180deg); }
+    .faq-a {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.2,0.8,0.2,1), padding 0.3s;
+      padding: 0 18px;
+      font-size: 14px; line-height: 1.75; color: var(--apple-sub-text);
+    }
+    .faq-a.open { max-height: 600px; padding: 0 18px 18px; }
+    .emergency-card {
+      background: linear-gradient(135deg, #ff3b30, #ff6b6b);
+      color: white; border-radius: 18px; padding: 18px;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 14px;
+      cursor: pointer; box-shadow: 0 6px 20px rgba(255,59,48,0.3);
+    }
+    .manual-tag {
+      font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 99px;
+      margin-right: 8px; display: inline-block; margin-bottom: 8px;
+    }
+    .tag-aupay { background: rgba(0,185,0,0.15); color: #008000; }
+    .tag-food { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+    .tag-trouble { background: rgba(255,59,48,0.15); color: var(--apple-red); }
+    .tag-ops { background: rgba(0,122,255,0.15); color: #0055dd; }
+
+    /* ===== ローディング ===== */
+    .loading-screen { text-align: center; padding: 60px 20px; }
+    .loading-spinner {
+      width: 44px; height: 44px; border: 4px solid rgba(255,107,43,0.2);
+      border-top-color: var(--accent-orange); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 17px; font-weight: 700; color: var(--apple-text); }
+    .loading-sub { font-size: 13px; color: var(--apple-sub-text); margin-top: 6px; }
+
+    /* ===== ダークモード補正 ===== */
+    [data-theme="dark"] .card { background: #2c2c2e; }
+    [data-theme="dark"] .stat-card { background: #2c2c2e; }
+    [data-theme="dark"] .name-chip { background: #3a3a3c; }
+    [data-theme="dark"] .task-card { background: #2c2c2e; }
+    [data-theme="dark"] .memo-post { background: #2c2c2e; }
+    [data-theme="dark"] .faq-item { background: #2c2c2e; }
+    [data-theme="dark"] .budget-tile { background: #2c2c2e; }
+    [data-theme="dark"] .ghost-btn { background: rgba(255,255,255,0.1); }
+
+    /* ===== アップロードオーバーレイ ===== */
+    #upload-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(12px);
+      z-index: 3500; align-items: center; justify-content: center;
+    }
+    .upload-box {
+      background: var(--card-bg); border-radius: 20px; padding: 32px 28px;
+      text-align: center; width: 280px;
+    }
+    .upload-progress-bar-bg { background: rgba(0,0,0,0.08); border-radius: 99px; height: 8px; margin: 16px 0 8px; overflow: hidden; }
+    .upload-progress-bar { height: 100%; background: var(--accent-orange); border-radius: 99px; transition: width 0.3s; width: 0%; }
+
+    /* テーマカラー select */
+    .theme-btn {
+      width: 36px; height: 36px; border-radius: 50%; border: 3px solid transparent;
+      cursor: pointer; transition: transform 0.15s;
+    }
+    .theme-btn.active { border-color: var(--apple-text); transform: scale(1.15); }
+
+    /* ===== アコーディオン ===== */
+    .acc-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0; cursor: pointer; border-bottom: 0.5px solid rgba(0,0,0,0.08);
+    }
+    .acc-header-title { font-size: 15px; font-weight: 700; }
+    .acc-body { overflow: hidden; transition: max-height 0.35s cubic-bezier(0.2,0.8,0.2,1); max-height: 0; }
+    .acc-body.open { max-height: 2000px; }
+
+    /* ===== misc ===== */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--apple-sub-text); }
+    .empty-state i { color: var(--apple-sub-text); opacity: 0.5; margin-bottom: 12px; }
+    .pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+    .pill-green { background: rgba(52,199,89,0.15); color: var(--apple-green); }
+    .pill-orange { background: rgba(255,107,43,0.15); color: var(--accent-orange); }
+    .pill-red { background: rgba(255,59,48,0.15); color: var(--apple-red); }
+    .pill-gray { background: rgba(142,142,147,0.12); color: var(--apple-gray); }
+
+    .inline-icon { vertical-align: middle; margin-right: 4px; }
+    hr.divider { border: none; border-top: 0.5px solid rgba(0,0,0,0.08); margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <div id="toast"></div>
+
+  <!-- アップロードオーバーレイ -->
+  <div id="upload-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);z-index:3500;align-items:center;justify-content:center;">
+    <div class="upload-box">
+      <i data-lucide="upload-cloud" size="36" style="color:var(--accent-orange);margin-bottom:14px;"></i>
+      <div style="font-size:17px;font-weight:700;margin-bottom:4px;">アップロード中</div>
+      <div style="font-size:13px;color:var(--apple-sub-text);">しばらくお待ちください...</div>
+      <div class="upload-progress-bar-bg"><div class="upload-progress-bar" id="upload-bar"></div></div>
+      <div id="upload-percent" style="font-size:15px;font-weight:700;color:var(--accent-orange);">0%</div>
+    </div>
+  </div>
+
+  <!-- 決済確認シート -->
+  <div class="confirm-overlay" id="confirm-overlay" onclick="closeConfirmSheet()"></div>
+  <div class="confirm-sheet" id="confirm-sheet">
+    <div class="sheet-handle"></div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:22px;font-weight:800;margin-bottom:6px;">🍛 カレー＋ナンセット</div>
+      <div style="font-size:42px;font-weight:900;color:var(--accent-orange);">¥400</div>
+      <div class="aupay-badge" style="margin-top:8px;"><i data-lucide="smartphone" size="14"></i> au PAY 決済確認済み</div>
+    </div>
+    <button class="primary-btn" style="font-size:18px;padding:18px;" onclick="confirmSale()">
+      ✅ 決済完了・在庫を引く
+    </button>
+    <button class="secondary-btn" style="width:100%;text-align:center;padding:14px;display:block;" onclick="closeConfirmSheet()">キャンセル</button>
+  </div>
+
+  <!-- スクロール領域 -->
+  <div id="scroll-wrapper">
+    <div class="header" id="mainHeader">
+      <div class="refresh-icon" onclick="manualRefresh()"><i data-lucide="rotate-cw" size="22"></i></div>
+      <h1><span class="header-emoji">🍛</span><span id="header-title">カレー模擬店</span></h1>
+      <p id="sub-title">文化祭 運営アプリ</p>
+    </div>
+    <div class="container" id="app"></div>
+  </div>
+
+  <!-- ボトムナビ（5タブ） -->
+  <div class="navbar">
+    <button class="nav-item active" id="nav-register" onclick="showRegister()">
+      <i data-lucide="shopping-cart"></i><span class="nav-text">レジ</span>
+    </button>
+    <button class="nav-item" id="nav-shift" onclick="showShift()">
+      <i data-lucide="users"></i><span class="nav-text">シフト</span>
+    </button>
+    <button class="nav-item" id="nav-budget" onclick="showBudget()">
+      <i data-lucide="wallet"></i><span class="nav-text">予算</span>
+    </button>
+    <button class="nav-item" id="nav-tasks" onclick="showTasks()">
+      <i data-lucide="check-square"></i><span class="nav-text">タスク</span>
+    </button>
+    <button class="nav-item" id="nav-manual" onclick="showManual()">
+      <i data-lucide="book-open"></i><span class="nav-text">マニュアル</span>
+    </button>
+  </div>
+
+  <!-- =====================================================
+       メインスクリプト
+  ===================================================== -->
+  <script>
+  // ========================
+  // 定数・マスターデータ
+  // ========================
+  const PRICE_PER_SET = 400;
+  const INITIAL_STOCK = 350; // 初期在庫（GAS未接続時のデフォルト）
+
+  // クラスメンバー名（実際のクラスに合わせて変更してください）
+  const CLASS_MEMBERS = [
+    "田中 陽斗", "鈴木 美咲", "佐藤 颯太", "高橋 葵", "渡辺 悠人",
+    "伊藤 結菜", "山本 大輝", "中村 さくら", "小林 翔太", "加藤 ひなた",
+    "吉田 涼太", "山田 楓", "松本 蒼", "井上 莉子", "木村 健人",
+    "林 陽菜", "清水 拓哉", "山口 このか", "斉藤 颯", "森 七海"
+  ];
+
+  // シフトスケジュール（時間帯ごとのポジション割り当て）
+  const SHIFT_SCHEDULE = [
+    {
+      id: "s1", timeLabel: "9:00〜10:00", startH: 9, endH: 10,
+      positions: {
+        "田中 陽斗": "厨房（カレー鍋担当）", "鈴木 美咲": "レジ・会計",
+        "佐藤 颯太": "厨房（ナン焼き担当）", "高橋 葵": "盛り付け",
+        "渡辺 悠人": "呼び込み", "伊藤 結菜": "盛り付け",
+        "山本 大輝": "厨房（ナン焼き担当）", "中村 さくら": "レジ・会計",
+        "小林 翔太": "呼び込み", "加藤 ひなた": "プラネタリウム案内",
+        "吉田 涼太": "休憩", "山田 楓": "休憩",
+        "松本 蒼": "休憩", "井上 莉子": "休憩",
+        "木村 健人": "厨房（カレー鍋担当）", "林 陽菜": "盛り付け",
+        "清水 拓哉": "呼び込み", "山口 このか": "プラネタリウム案内",
+        "斉藤 颯": "休憩", "森 七海": "休憩"
+      },
+      breakMembers: ["吉田 涼太","山田 楓","松本 蒼","井上 莉子","斉藤 颯","森 七海"]
+    },
+    {
+      id: "s2", timeLabel: "10:00〜11:00", startH: 10, endH: 11,
+      positions: {
+        "田中 陽斗": "休憩", "鈴木 美咲": "厨房（カレー鍋担当）",
+        "佐藤 颯太": "休憩", "高橋 葵": "厨房（ナン焼き担当）",
+        "渡辺 悠人": "盛り付け", "伊藤 結菜": "レジ・会計",
+        "山本 大輝": "休憩", "中村 さくら": "呼び込み",
+        "小林 翔太": "盛り付け", "加藤 ひなた": "休憩",
+        "吉田 涼太": "厨房（カレー鍋担当）", "山田 楓": "レジ・会計",
+        "松本 蒼": "盛り付け", "井上 莉子": "呼び込み",
+        "木村 健人": "休憩", "林 陽菜": "プラネタリウム案内",
+        "清水 拓哉": "休憩", "山口 このか": "厨房（ナン焼き担当）",
+        "斉藤 颯": "プラネタリウム案内", "森 七海": "盛り付け"
+      },
+      breakMembers: ["田中 陽斗","佐藤 颯太","山本 大輝","加藤 ひなた","木村 健人","清水 拓哉"]
+    },
+    {
+      id: "s3", timeLabel: "11:00〜12:00", startH: 11, endH: 12,
+      positions: {
+        "田中 陽斗": "盛り付け", "鈴木 美咲": "休憩",
+        "佐藤 颯太": "呼び込み", "高橋 葵": "休憩",
+        "渡辺 悠人": "厨房（カレー鍋担当）", "伊藤 結菜": "休憩",
+        "山本 大輝": "レジ・会計", "中村 さくら": "プラネタリウム案内",
+        "小林 翔太": "厨房（ナン焼き担当）", "加藤 ひなた": "盛り付け",
+        "吉田 涼太": "休憩", "山田 楓": "呼び込み",
+        "松本 蒼": "厨房（ナン焼き担当）", "井上 莉子": "休憩",
+        "木村 健人": "盛り付け", "林 陽菜": "レジ・会計",
+        "清水 拓哉": "呼び込み", "山口 このか": "休憩",
+        "斉藤 颯": "厨房（カレー鍋担当）", "森 七海": "プラネタリウム案内"
+      },
+      breakMembers: ["鈴木 美咲","高橋 葵","伊藤 結菜","吉田 涼太","井上 莉子","山口 このか"]
+    },
+    {
+      id: "s4", timeLabel: "12:00〜13:00", startH: 12, endH: 13,
+      positions: {
+        "田中 陽斗": "レジ・会計", "鈴木 美咲": "盛り付け",
+        "佐藤 颯太": "厨房（カレー鍋担当）", "高橋 葵": "呼び込み",
+        "渡辺 悠人": "休憩", "伊藤 結菜": "厨房（ナン焼き担当）",
+        "山本 大輝": "呼び込み", "中村 さくら": "レジ・会計",
+        "小林 翔太": "休憩", "加藤 ひなた": "厨房（カレー鍋担当）",
+        "吉田 涼太": "盛り付け", "山田 楓": "プラネタリウム案内",
+        "松本 蒼": "休憩", "井上 莉子": "盛り付け",
+        "木村 健人": "厨房（ナン焼き担当）", "林 陽菜": "休憩",
+        "清水 拓哉": "プラネタリウム案内", "山口 このか": "呼び込み",
+        "斉藤 颯": "レジ・会計", "森 七海": "厨房（ナン焼き担当）"
+      },
+      breakMembers: ["渡辺 悠人","小林 翔太","松本 蒼","林 陽菜"]
+    },
+    {
+      id: "s5", timeLabel: "13:00〜14:00", startH: 13, endH: 14,
+      positions: {
+        "田中 陽斗": "呼び込み", "鈴木 美咲": "プラネタリウム案内",
+        "佐藤 颯太": "盛り付け", "高橋 葵": "厨房（カレー鍋担当）",
+        "渡辺 悠人": "レジ・会計", "伊藤 結菜": "呼び込み",
+        "山本 大輝": "厨房（カレー鍋担当）", "中村 さくら": "休憩",
+        "小林 翔太": "盛り付け", "加藤 ひなた": "レジ・会計",
+        "吉田 涼太": "厨房（ナン焼き担当）", "山田 楓": "休憩",
+        "松本 蒼": "呼び込み", "井上 莉子": "厨房（ナン焼き担当）",
+        "木村 健人": "プラネタリウム案内", "林 陽菜": "盛り付け",
+        "清水 拓哉": "厨房（カレー鍋担当）", "山口 このか": "レジ・会計",
+        "斉藤 颯": "盛り付け", "森 七海": "呼び込み"
+      },
+      breakMembers: ["中村 さくら","山田 楓"]
+    }
+  ];
+
+  // 仕入れ比較サイトデータ
+  const SUPPLIERS = [
+    { name: "業務スーパー", items: { "カレーペースト(500g袋)": 198, "ナン粉(1kg)": 248, "ヨーグルト(400g)": 138, "タマネギ(3個)": 158, "チキン(1kg冷凍)": 498 } },
+    { name: "コストコ", items: { "カレーペースト(500g袋)": 150, "ナン粉(1kg)": 310, "ヨーグルト(400g)": 110, "タマネギ(3個)": 120, "チキン(1kg冷凍)": 380 } },
+    { name: "西友", items: { "カレーペースト(500g袋)": 228, "ナン粉(1kg)": 268, "ヨーグルト(400g)": 148, "タマネギ(3個)": 178, "チキン(1kg冷凍)": 528 } },
+    { name: "Amazon食材", items: { "カレーペースト(500g袋)": 185, "ナン粉(1kg)": 220, "ヨーグルト(400g)": 158, "タマネギ(3個)": 200, "チキン(1kg冷凍)": 450 } }
+  ];
+
+  // アプリ状態
+  let currentView = 'register';
+  let appSettings = JSON.parse(localStorage.getItem('curry_app_settings') || '{"theme":"light","darkMode":false}');
+  let selectedMember = localStorage.getItem('curry_selected_member') || '';
+  let salesLog = [];
+  let stockCount = INITIAL_STOCK;
+  let hygieneState = JSON.parse(localStorage.getItem('curry_hygiene') || '{}');
+  let taskList = [];
+  let memoList = [];
+  let budgetList = [];
+  let shoppingList = [];
+  let stockPollTimer = null;
+  let simQty = 100;
+
+  // ========================
+  // GAS（Google Apps Script）連携設定
+  // ========================
+  // ★★★ ここにデプロイしたGASウェブアプリのURLを貼り付けてください ★★★
+  // 例: "https://script.google.com/macros/s/AKfycbx.../exec"
+  const GAS_URL = "YOUR_GAS_WEBAPP_URL";
+
+  // ========================
+  // GAS API ヘルパー
+  // ========================
+  function isGasReady() {
+    return typeof GAS_URL === 'string' && GAS_URL.indexOf('http') === 0;
+  }
+
+  // GETリクエスト（データ取得）
+  async function gasGet(action, params) {
+    if (!isGasReady()) return null;
+    const qs = new URLSearchParams(Object.assign({ action: action }, params || {})).toString();
+    const res = await fetch(GAS_URL + '?' + qs, { method: 'GET' });
+    if (!res.ok) throw new Error('GAS GET エラー: ' + res.status);
+    const data = await res.json();
+    if (data && data.error) throw new Error(data.error);
+    return data;
+  }
+
+  // POSTリクエスト（データ追加・更新・削除）
+  // Content-Type を text/plain にすることで、GASに対するブラウザの
+  // プリフライト(OPTIONS)リクエストを回避し、確実に通信できるようにしています。
+  async function gasPost(action, payload) {
+    if (!isGasReady()) return null;
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action: action }, payload || {}))
+    });
+    if (!res.ok) throw new Error('GAS POST エラー: ' + res.status);
+    const data = await res.json();
+    if (data && data.error) throw new Error(data.error);
+    return data;
+  }
+
+  // 売上・在庫・支出・買い物・タスク・メモを一括取得
+  async function gasGetAll() {
+    return gasGet('getAll');
+  }
+
+  // ========================
+  // トースト
+  // ========================
+  function showToast(msg, duration) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.display = 'block';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.display = 'none'; }, duration || 2500);
+  }
+
+  // ========================
+  // ナビ更新
+  // ========================
+  function updateNav(activeId, headerTitle, subTitle) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(activeId);
+    if (el) el.classList.add('active');
+    document.getElementById('header-title').innerText = headerTitle || 'カレー模擬店';
+    document.getElementById('sub-title').innerText = subTitle || '文化祭 運営アプリ';
+    document.getElementById('scroll-wrapper').scrollTop = 0;
+    lucide.createIcons();
+  }
+
+  // ========================
+  // 手動リフレッシュ
+  // ========================
+  function manualRefresh() {
+    const icon = document.querySelector('.refresh-icon');
+    icon.style.transition = 'transform 0.6s cubic-bezier(0.2,0.8,0.2,1)';
+    icon.style.transform = 'rotate(360deg)';
+    setTimeout(() => { icon.style.transform = 'rotate(0deg)'; }, 600);
+    showToast('最新情報を取得中...');
+    if (currentView === 'register') showRegister();
+    else if (currentView === 'budget') showBudget();
+    else if (currentView === 'tasks') showTasks();
+  }
+
+  // ========================
+  // テーマ適用
+  // ========================
+  function applyTheme() {
+    const theme = appSettings.darkMode ? 'dark' : (appSettings.theme || 'light');
+    document.documentElement.setAttribute('data-theme', theme === 'light' ? '' : theme);
+    saveSettings();
+  }
+  function saveSettings() {
+    localStorage.setItem('curry_app_settings', JSON.stringify(appSettings));
+  }
+
+  // ========================================================
+  // ① レジ・会計タブ
+  // ========================================================
+  function showRegister() {
+    currentView = 'register';
+    updateNav('nav-register', '🍛 レジ・会計', 'リアルタイム売上管理');
+    renderRegister();
+    subscribeStock();
+  }
+
+  function subscribeStock() {
+    if (!isFirebaseReady()) return;
+    if (unsubStock) unsubStock();
+    const { db, collection, onSnapshot, query, orderBy, limit } = fb();
+    // 在庫と売上ログをリアルタイム監視
+    unsubStock = onSnapshot(
+      query(collection(db, 'sales'), orderBy('createdAt', 'desc'), limit(30)),
+      snap => {
+        salesLog = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        updateSalesUI();
+      },
+      err => { console.warn('sales subscribe error:', err); }
+    );
+    // 在庫監視
+    const { doc } = fb();
+    onSnapshot(doc(db, 'config', 'stock'), snap => {
+      if (snap.exists()) {
+        stockCount = snap.data().remaining ?? INITIAL_STOCK;
+        updateStockUI();
+      }
+    });
+  }
+
+  function renderRegister() {
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div style="padding:4px 0 8px;">
+        <!-- 在庫・売上統計 -->
+        <div class="sales-stat-grid">
+          <div class="stat-card">
+            <div class="stat-val" id="stat-remaining" style="color:var(--accent-orange);">—</div>
+            <div class="stat-lbl">残り食数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="stat-sold" style="color:var(--apple-green);">—</div>
+            <div class="stat-lbl">販売済み食数</div>
+          </div>
+        </div>
+
+        <!-- 在庫バー -->
+        <div class="card" style="padding:16px 18px 14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:14px;font-weight:700;">在庫状況</span>
+            <span id="stat-sales" style="font-size:17px;font-weight:800;color:var(--accent-orange);">¥—</span>
+          </div>
+          <div class="stock-bar-wrap"><div class="stock-bar" id="stock-bar" style="width:100%;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--apple-sub-text);">
+            <span id="stock-label">読み込み中...</span>
+            <span>初期在庫 <strong id="initial-stock-disp">${INITIAL_STOCK}</strong> 食</span>
+          </div>
+        </div>
+
+        <!-- メインボタン -->
+        <button class="register-big-btn" onclick="openConfirmSheet()">
+          <span class="btn-sub">🍛 カレー＋ナンセット</span>
+          <span class="btn-price">¥400</span>
+          <span class="btn-sub">タップして決済確認へ</span>
+        </button>
+
+        <!-- au PAY バッジ -->
+        <div style="text-align:center;margin:12px 0;">
+          <span class="aupay-badge"><i data-lucide="credit-card" size="14"></i> au PAY キャッシュレス専用</span>
+        </div>
+
+        <!-- 最近の売上ログ -->
+        <div class="section-title">最近の決済ログ</div>
+        <div class="card" style="padding:8px 16px;">
+          <div class="recent-sales-list" id="recent-sales">
+            <div class="empty-state"><i data-lucide="receipt" size="32" style="display:block;margin:0 auto 10px;"></i>まだ売上がありません</div>
+          </div>
+        </div>
+
+        <!-- 手動在庫設定 -->
+        <div class="section-title">管理者操作</div>
+        <div class="card">
+          <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--apple-sub-text);">初期在庫・在庫上書き</div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input type="number" id="stock-override-input" placeholder="例: 350" style="flex:1;margin:0;">
+            <button class="ghost-btn" onclick="overrideStock()" style="white-space:nowrap;">セット</button>
+          </div>
+          <div style="font-size:12px;color:var(--apple-sub-text);margin-top:8px;">※ Firebaseへ接続後に在庫数を初期化・上書きできます</div>
+        </div>
+      </div>`;
+    lucide.createIcons();
+    updateSalesUI();
+    updateStockUI();
+  }
+
+  function updateSalesUI() {
+    if (currentView !== 'register') return;
+    const soldEl = document.getElementById('stat-sold');
+    const salesEl = document.getElementById('stat-sales');
+    const recentEl = document.getElementById('recent-sales');
+    const count = salesLog.length;
+    const total = count * PRICE_PER_SET;
+    if (soldEl) soldEl.innerText = count + ' 食';
+    if (salesEl) salesEl.innerText = '¥' + total.toLocaleString();
+    if (recentEl) {
+      if (salesLog.length === 0) {
+        recentEl.innerHTML = '<div class="empty-state" style="padding:20px 0;"><i data-lucide="receipt" size="28" style="display:block;margin:0 auto 8px;"></i>まだ売上がありません</div>';
+      } else {
+        recentEl.innerHTML = salesLog.slice(0, 20).map(s => {
+          const ts = s.createdAt ? (s.createdAt.toDate ? s.createdAt.toDate() : new Date(s.createdAt)) : new Date();
+          const time = String(ts.getHours()).padStart(2,'0') + ':' + String(ts.getMinutes()).padStart(2,'0');
+          return `<div class="sale-log-item">
+            <div class="sale-log-time">${time}</div>
+            <div style="font-size:14px;">🍛 ×1</div>
+            <div class="sale-log-amount">¥${PRICE_PER_SET}</div>
+          </div>`;
+        }).join('');
+      }
+      lucide.createIcons();
+    }
+  }
+
+  function updateStockUI() {
+    if (currentView !== 'register') return;
+    const remEl = document.getElementById('stat-remaining');
+    const barEl = document.getElementById('stock-bar');
+    const lblEl = document.getElementById('stock-label');
+    const initEl = document.getElementById('initial-stock-disp');
+    const initial = INITIAL_STOCK;
+    const pct = Math.max(0, Math.min(100, (stockCount / initial) * 100));
+    if (remEl) remEl.innerText = stockCount + ' 食';
+    if (barEl) {
+      barEl.style.width = pct + '%';
+      barEl.className = 'stock-bar' + (pct < 20 ? ' low' : pct < 50 ? ' medium' : '');
+    }
+    if (lblEl) {
+      if (stockCount <= 0) lblEl.innerHTML = '<strong style="color:var(--apple-red);">🚨 完売！</strong>';
+      else if (stockCount <= initial * 0.2) lblEl.innerHTML = `<strong style="color:var(--apple-red);">⚠️ 残りわずか！</strong>`;
+      else if (stockCount <= initial * 0.5) lblEl.innerHTML = `残り約 ${Math.round(pct)}%`;
+      else lblEl.innerText = `まだ余裕あり (${pct.toFixed(0)}%)`;
+    }
+    if (initEl) initEl.innerText = initial;
+  }
+
+  function openConfirmSheet() {
+    document.getElementById('confirm-sheet').classList.add('open');
+    document.getElementById('confirm-overlay').classList.add('open');
+  }
+  function closeConfirmSheet() {
+    document.getElementById('confirm-sheet').classList.remove('open');
+    document.getElementById('confirm-overlay').classList.remove('open');
+  }
+
+  async function confirmSale() {
+    closeConfirmSheet();
+    if (!isFirebaseReady()) {
+      showToast('⚠️ Firebase未接続 – ローカルカウントのみ更新');
+      stockCount = Math.max(0, stockCount - 1);
+      updateStockUI();
+      return;
+    }
+    const { db, collection, doc, addDoc, updateDoc, serverTimestamp, increment, setDoc, getDoc } = fb();
+    try {
+      // 在庫を-1
+      const stockRef = doc(db, 'config', 'stock');
+      const stockSnap = await getDoc(stockRef);
+      if (!stockSnap.exists()) {
+        await setDoc(stockRef, { remaining: INITIAL_STOCK - 1, initial: INITIAL_STOCK });
+      } else {
+        await updateDoc(stockRef, { remaining: increment(-1) });
+      }
+      // 売上ログ追加
+      await addDoc(collection(db, 'sales'), {
+        amount: PRICE_PER_SET, item: 'カレー+ナンセット', createdAt: serverTimestamp()
+      });
+      showToast('✅ 決済完了！');
+    } catch(e) {
+      console.error(e);
+      showToast('⚠️ Firestore書き込みエラー: ' + e.message);
+    }
+  }
+
+  async function overrideStock() {
+    const val = parseInt(document.getElementById('stock-override-input').value);
+    if (isNaN(val) || val < 0) { showToast('正しい数値を入力してください'); return; }
+    stockCount = val;
+    updateStockUI();
+    if (!isFirebaseReady()) { showToast('Firebase未接続 – ローカルのみ更新'); return; }
+    const { db, doc, setDoc } = fb();
+    try {
+      await setDoc(doc(db, 'config', 'stock'), { remaining: val, initial: val });
+      showToast('在庫を ' + val + ' 食にセットしました');
+    } catch(e) { showToast('エラー: ' + e.message); }
+  }
+
+  // ========================================================
+  // ② シフト・衛生タブ
+  // ========================================================
+  function showShift() {
+    currentView = 'shift';
+    updateNav('nav-shift', '👥 シフト・衛生', '当日スケジュール & 衛生チェック');
+    renderShift();
+  }
+
+  function getCurrentSlot() {
+    const h = new Date().getHours();
+    return SHIFT_SCHEDULE.find(s => h >= s.startH && h < s.endH) || null;
+  }
+
+  function getPositionIcon(pos) {
+    const map = {
+      '厨房（カレー鍋担当）': '🍲', '厨房（ナン焼き担当）': '🫓',
+      'レジ・会計': '🧾', '盛り付け': '🍽', '呼び込み': '📣',
+      'プラネタリウム案内': '🌟', '休憩': '☕'
+    };
+    return map[pos] || '📋';
+  }
+
+  function renderShift() {
+    const app = document.getElementById('app');
+    const slot = getCurrentSlot();
+    const now = new Date();
+    const nowLabel = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+    const memberHtml = CLASS_MEMBERS.map(name => `
+      <button class="name-chip ${selectedMember === name ? 'selected' : ''}" onclick="selectMember('${name}')">${name.split(' ')[0]}</button>
+    `).join('');
+
+    let mySlotHtml = '';
+    if (selectedMember) {
+      if (!slot) {
+        mySlotHtml = `<div class="position-card" style="background:linear-gradient(135deg,var(--apple-gray),#aaa);">
+          <div class="pos-time">現在時刻 ${nowLabel}</div>
+          <div class="pos-role">📅 シフト時間外</div>
+          <div class="pos-break">文化祭時間外です</div>
+        </div>`;
+      } else {
+        const pos = slot.positions[selectedMember] || '未割り当て';
+        const isBreak = pos === '休憩';
+        const cardStyle = isBreak ? 'background:linear-gradient(135deg,#636366,#888)' : '';
+        mySlotHtml = `
+          <div class="position-card" style="${cardStyle}">
+            <div class="pos-time">⏰ ${slot.timeLabel} ・ 現在 ${nowLabel}</div>
+            <div class="pos-role">${getPositionIcon(pos)} ${pos}</div>
+            ${isBreak ? '<div class="pos-break">ゆっくり休憩してください！</div>' : '<div class="pos-break">次の交代まで頑張って！</div>'}
+          </div>
+          <div class="card" style="margin-bottom:14px;">
+            <div style="font-size:13px;font-weight:700;color:var(--apple-sub-text);margin-bottom:10px;">全時間帯のスケジュール</div>
+            ${SHIFT_SCHEDULE.map(s => {
+              const p = s.positions[selectedMember] || '未割り当て';
+              const isCurrent = s.id === slot.id;
+              return `<div style="display:flex;align-items:center;padding:9px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);gap:10px;${isCurrent?'background:rgba(255,107,43,0.06);border-radius:10px;padding-left:10px;':''}">
+                ${isCurrent ? '<span style="font-size:10px;font-weight:800;color:var(--accent-orange);">NOW</span>' : '<span style="width:32px;"></span>'}
+                <span style="font-size:13px;color:var(--apple-sub-text);min-width:80px;">${s.timeLabel}</span>
+                <span style="font-size:14px;font-weight:600;">${getPositionIcon(p)} ${p}</span>
+              </div>`;
+            }).join('')}
+          </div>`;
+      }
+    }
+
+    // 衛生チェック
+    const hygieneCheckItems = ['💅 爪チェック', '🩹 手の傷確認', '🤒 体調確認'];
+    const hygHtml = CLASS_MEMBERS.map(name => {
+      const state = hygieneState[name] || {};
+      const allDone = hygieneCheckItems.every((_, i) => state[i]);
+      return `<div class="person-check-row">
+        <div class="person-check-header">
+          <span style="font-size:16px;">${allDone ? '✅' : '⬜'}</span>
+          <span class="person-check-name">${name}</span>
+          <span style="font-size:11px;font-weight:700;color:${allDone ? 'var(--apple-green)' : 'var(--apple-sub-text)'};">${allDone ? 'OK' : '未確認'}</span>
+        </div>
+        <div class="hygiene-checks-inner">
+          ${hygieneCheckItems.map((item, idx) => `
+            <div class="mini-check" onclick="toggleHygiene('${name}',${idx})">
+              <div class="mini-check-box ${state[idx] ? 'done' : ''}">
+                ${state[idx] ? '<svg width="12" height="12" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" fill="none"/></svg>' : ''}
+              </div>
+              <span style="font-size:13px;${state[idx] ? 'color:var(--apple-sub-text);text-decoration:line-through;' : ''}">${item}</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+
+    app.innerHTML = `
+      <div style="padding:4px 0 8px;">
+        <!-- 名前選択 -->
+        <div class="section-title">自分の名前を選択</div>
+        <div class="card" style="padding:16px;">
+          <div class="name-chip-grid">${memberHtml}</div>
+        </div>
+
+        <!-- 自分のポジション -->
+        ${selectedMember ? `
+          <div class="section-title">📍 ${selectedMember} のポジション</div>
+          ${mySlotHtml}
+        ` : `
+          <div class="empty-state">
+            <i data-lucide="user" size="36" style="display:block;margin:0 auto 12px;"></i>
+            上から自分の名前を選んでください
+          </div>
+        `}
+
+        <!-- 衛生チェック（シフトリーダー用対面確認） -->
+        <div class="section-title" style="margin-top:4px;">🧼 衛生チェック（対面確認）</div>
+        <div class="card" style="padding:0 0 4px;">
+          <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;color:var(--apple-sub-text);">シフトリーダーが対面で確認 → タップでチェック</span>
+            <button onclick="clearHygiene()" style="font-size:11px;color:var(--apple-red);background:none;border:none;cursor:pointer;font-weight:700;">リセット</button>
+          </div>
+          <div>${hygHtml}</div>
+        </div>
+      </div>`;
+    lucide.createIcons();
+  }
+
+  function selectMember(name) {
+    selectedMember = name;
+    localStorage.setItem('curry_selected_member', name);
+    renderShift();
+  }
+
+  function toggleHygiene(name, idx) {
+    if (!hygieneState[name]) hygieneState[name] = {};
+    hygieneState[name][idx] = !hygieneState[name][idx];
+    localStorage.setItem('curry_hygiene', JSON.stringify(hygieneState));
+    renderShift();
+  }
+
+  function clearHygiene() {
+    if (!confirm('衛生チェックを全員リセットしますか？')) return;
+    hygieneState = {};
+    localStorage.setItem('curry_hygiene', '{}');
+    showToast('衛生チェックをリセットしました');
+    renderShift();
+  }
+
+  // ========================================================
+  // ③ 予算・支出タブ
+  // ========================================================
+  function showBudget() {
+    currentView = 'budget';
+    updateNav('nav-budget', '💰 予算・支出', '仕入れ比較 & 経費管理');
+    loadBudgetData().then(() => renderBudget());
+  }
+
+  async function loadBudgetData() {
+    if (!isFirebaseReady()) {
+      budgetList = JSON.parse(localStorage.getItem('curry_budget') || '[]');
+      shoppingList = JSON.parse(localStorage.getItem('curry_shopping') || getDefaultShoppingList());
+      return;
+    }
+    const { db, collection, getDocs, query, orderBy } = fb();
+    try {
+      const snap = await getDocs(query(collection(db, 'expenses'), orderBy('createdAt', 'desc')));
+      budgetList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const sSnap = await getDocs(collection(db, 'shopping'));
+      shoppingList = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (shoppingList.length === 0) shoppingList = JSON.parse(getDefaultShoppingList());
+    } catch(e) {
+      console.warn('budget load error:', e);
+      budgetList = JSON.parse(localStorage.getItem('curry_budget') || '[]');
+      shoppingList = JSON.parse(localStorage.getItem('curry_shopping') || getDefaultShoppingList());
+    }
+  }
+
+  function getDefaultShoppingList() {
+    return JSON.stringify([
+      { id: 'sl1', name: 'カレーペースト（業務用）', qty: '1袋', bought: false },
+      { id: 'sl2', name: 'ナン用小麦粉', qty: '5kg', bought: false },
+      { id: 'sl3', name: 'チキン（冷凍）', qty: '5kg', bought: false },
+      { id: 'sl4', name: 'タマネギ', qty: '20個', bought: false },
+      { id: 'sl5', name: 'ヨーグルト', qty: '1kg', bought: false },
+      { id: 'sl6', name: 'スパイスセット', qty: '1式', bought: false },
+      { id: 'sl7', name: '紙皿', qty: '400枚', bought: false },
+      { id: 'sl8', name: 'ビニール手袋', qty: '2箱', bought: false },
+      { id: 'sl9', name: '使い捨て容器', qty: '400個', bought: false },
+      { id: 'sl10', name: 'スプーン（使い捨て）', qty: '400本', bought: false }
+    ]);
+  }
+
+  function renderBudget() {
+    const app = document.getElementById('app');
+    const totalSpent = budgetList.reduce((sum, b) => sum + (b.amount || 0), 0);
+    const budget = 50000; // 予算総額（変更可）
+    const remaining = budget - totalSpent;
+
+    // シミュレーション
+    const simRows = SUPPLIERS.map(sup => {
+      const total = Object.values(sup.items).reduce((s, p) => s + p, 0);
+      const totalFor = Math.round(total * (simQty / 10));
+      return { name: sup.name, unitTotal: total, totalFor };
+    }).sort((a, b) => a.totalFor - b.totalFor);
+    const cheapest = simRows[0];
+
+    const simHtml = simRows.map((r, i) => `
+      <div class="sim-result-row ${i === 0 ? 'cheapest' : ''}">
+        <div>
+          <div style="font-size:15px;font-weight:600;">${r.name}</div>
+          <div style="font-size:12px;color:var(--apple-sub-text);">${simQty}食分の目安</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:18px;font-weight:800;color:${i===0?'var(--apple-green)':'var(--apple-text)'};">¥${r.totalFor.toLocaleString()}</div>
+          ${i === 0 ? '<span class="sim-cheapest-badge">最安値！</span>' : ''}
+        </div>
+      </div>`).join('');
+
+    const receiptHtml = budgetList.length === 0
+      ? '<div class="empty-state" style="padding:24px 0;"><i data-lucide="receipt" size="32" style="display:block;margin:0 auto 10px;"></i>まだ支出がありません</div>'
+      : budgetList.map(b => `
+        <div class="receipt-card">
+          ${b.imageUrl ? `<img src="${b.imageUrl}" class="receipt-thumb" onclick="viewReceiptImage('${b.imageUrl}')">` : `<div class="receipt-thumb" style="display:flex;align-items:center;justify-content:center;"><i data-lucide="image-off" size="20" style="color:var(--apple-sub-text);"></i></div>`}
+          <div class="receipt-info">
+            <div class="receipt-amount">¥${(b.amount||0).toLocaleString()}</div>
+            <div style="font-size:14px;font-weight:600;margin-top:2px;">${b.memo || '（メモなし）'}</div>
+            <div class="receipt-meta">${b.date || ''}</div>
+          </div>
+          <button onclick="deleteExpense('${b.id}')" style="background:none;border:none;color:var(--apple-red);cursor:pointer;padding:8px;"><i data-lucide="trash-2" size="16"></i></button>
+        </div>`).join('');
+
+    const shopHtml = shoppingList.map(item => `
+      <div class="shopping-item ${item.bought ? 'bought' : ''}">
+        <div class="check-circle ${item.bought ? 'done' : ''}" onclick="toggleShopping('${item.id}')">
+          ${item.bought ? '<svg width="12" height="12" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" fill="none"/></svg>' : ''}
+        </div>
+        <div class="shop-name" style="flex:1;font-size:15px;font-weight:500;">${item.name}</div>
+        <div style="font-size:13px;color:var(--apple-sub-text);">${item.qty}</div>
+        <button onclick="deleteShopItem('${item.id}')" style="background:none;border:none;color:var(--apple-sub-text);cursor:pointer;padding:4px 8px;"><i data-lucide="x" size="14"></i></button>
+      </div>`).join('');
+
+    app.innerHTML = `
+      <div style="padding:4px 0 8px;">
+        <!-- 予算サマリー -->
+        <div class="budget-summary">
+          <div class="budget-tile">
+            <div class="tile-val" style="color:var(--apple-sub-text);">¥${budget.toLocaleString()}</div>
+            <div class="tile-lbl">予算総額</div>
+          </div>
+          <div class="budget-tile">
+            <div class="tile-val" style="color:var(--accent-orange);">¥${totalSpent.toLocaleString()}</div>
+            <div class="tile-lbl">使用済み</div>
+          </div>
+          <div class="budget-tile">
+            <div class="tile-val" style="color:${remaining >= 0 ? 'var(--apple-green)' : 'var(--apple-red)'};">¥${Math.abs(remaining).toLocaleString()}</div>
+            <div class="tile-lbl">${remaining >= 0 ? '残り予算' : '予算超過'}</div>
+          </div>
+        </div>
+
+        <!-- 仕入れ比較シミュレーター -->
+        <div class="section-title">🛒 仕入れ価格シミュレーター</div>
+        <div class="card" style="padding:0 0 4px;">
+          <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:12px;">
+            <span style="font-size:14px;font-weight:600;">仕入れ食数：</span>
+            <input type="number" id="sim-qty" value="${simQty}" style="width:90px;margin:0;padding:9px 12px;font-size:16px;" onchange="updateSim(this.value)">
+            <span style="font-size:14px;color:var(--apple-sub-text);">食分</span>
+          </div>
+          <div>${simHtml}</div>
+          <div style="padding:10px 16px;font-size:12px;color:var(--apple-sub-text);">※単価は参考値です。実際の店頭価格・セール状況を確認してください</div>
+        </div>
+
+        <!-- レシート記録 -->
+        <div class="section-title">📄 支出・レシート記録</div>
+        <div class="card">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div>
+              <label class="input-label">金額</label>
+              <input type="number" id="exp-amount" placeholder="1500" style="margin:0;">
+            </div>
+            <div>
+              <label class="input-label">日付</label>
+              <input type="date" id="exp-date" style="margin:0;" value="${new Date().toISOString().slice(0,10)}">
+            </div>
+          </div>
+          <label class="input-label">メモ</label>
+          <input type="text" id="exp-memo" placeholder="例: スパイスセット購入" style="margin-bottom:10px;">
+          <label class="input-label">レシート写真（任意）</label>
+          <input type="file" id="exp-photo" accept="image/*" style="margin-bottom:12px;padding:10px;border:1.5px dashed var(--input-border);border-radius:10px;background:var(--input-bg);">
+          <button class="primary-btn" onclick="addExpense()">支出を記録する</button>
+        </div>
+        <div class="card" style="padding:8px 16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--apple-sub-text);margin-bottom:4px;">支出履歴</div>
+          ${receiptHtml}
+        </div>
+
+        <!-- 買い物リスト -->
+        <div class="section-title">🛍️ 買い物リスト</div>
+        <div class="card" style="padding:0 0 8px;">
+          <div style="padding:12px 16px 4px;display:flex;gap:8px;">
+            <input type="text" id="shop-new" placeholder="アイテムを追加..." style="flex:1;margin:0;padding:10px 12px;">
+            <input type="text" id="shop-qty" placeholder="個数" style="width:80px;margin:0;padding:10px 12px;">
+            <button class="ghost-btn" onclick="addShopItem()" style="white-space:nowrap;">追加</button>
+          </div>
+          <div>${shopHtml || '<div class="empty-state" style="padding:16px;">買い物リストは空です</div>'}</div>
+        </div>
+      </div>`;
+    lucide.createIcons();
+  }
+
+  function updateSim(val) {
+    simQty = parseInt(val) || 100;
+    renderBudget();
+  }
+
+  async function addExpense() {
+    const amount = parseInt(document.getElementById('exp-amount').value);
+    const date = document.getElementById('exp-date').value;
+    const memo = document.getElementById('exp-memo').value.trim();
+    const file = document.getElementById('exp-photo').files[0];
+    if (isNaN(amount) || amount <= 0) { showToast('金額を入力してください'); return; }
+    let imageUrl = null;
+    if (file && isFirebaseReady()) {
+      imageUrl = await uploadReceiptPhoto(file);
+    }
+    const entry = { amount, date, memo, imageUrl, createdAt: new Date().toISOString() };
+    if (isFirebaseReady()) {
+      const { db, collection, addDoc, serverTimestamp } = fb();
+      try {
+        const docRef = await addDoc(collection(db, 'expenses'), { ...entry, createdAt: serverTimestamp() });
+        entry.id = docRef.id;
+      } catch(e) { entry.id = 'local_' + Date.now(); }
+    } else { entry.id = 'local_' + Date.now(); }
+    budgetList.unshift(entry);
+    localStorage.setItem('curry_budget', JSON.stringify(budgetList));
+    showToast('支出を記録しました！');
+    renderBudget();
+  }
+
+  async function uploadReceiptPhoto(file) {
+    if (!isFirebaseReady()) return null;
+    const { storage, storageRef, uploadBytesResumable, getDownloadURL } = fb();
+    const ref = storageRef(storage, 'receipts/' + Date.now() + '_' + file.name);
+    const overlay = document.getElementById('upload-overlay');
+    overlay.style.display = 'flex';
+    return new Promise((resolve) => {
+      const task = uploadBytesResumable(ref, file);
+      task.on('state_changed',
+        snap => {
+          const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+          document.getElementById('upload-bar').style.width = pct + '%';
+          document.getElementById('upload-percent').innerText = pct + '%';
+        },
+        err => { overlay.style.display = 'none'; showToast('アップロードエラー'); resolve(null); },
+        async () => {
+          overlay.style.display = 'none';
+          const url = await getDownloadURL(task.snapshot.ref);
+          resolve(url);
+        }
+      );
+    });
+  }
+
+  async function deleteExpense(id) {
+    if (!confirm('この支出を削除しますか？')) return;
+    budgetList = budgetList.filter(b => b.id !== id);
+    localStorage.setItem('curry_budget', JSON.stringify(budgetList));
+    if (isFirebaseReady() && !id.startsWith('local_')) {
+      const { db, doc, deleteDoc } = fb();
+      try { await deleteDoc(doc(db, 'expenses', id)); } catch(e) {}
+    }
+    showToast('削除しました');
+    renderBudget();
+  }
+
+  function viewReceiptImage(url) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;cursor:pointer;';
+    overlay.innerHTML = `<img src="${url}" style="max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain;">`;
+    overlay.onclick = () => overlay.remove();
+    document.body.appendChild(overlay);
+  }
+
+  async function toggleShopping(id) {
+    const item = shoppingList.find(i => i.id === id);
+    if (!item) return;
+    item.bought = !item.bought;
+    localStorage.setItem('curry_shopping', JSON.stringify(shoppingList));
+    if (isFirebaseReady() && !id.startsWith('sl')) {
+      const { db, doc, updateDoc } = fb();
+      try { await updateDoc(doc(db, 'shopping', id), { bought: item.bought }); } catch(e) {}
+    }
+    renderBudget();
+  }
+
+  async function addShopItem() {
+    const name = document.getElementById('shop-new').value.trim();
+    const qty = document.getElementById('shop-qty').value.trim() || '1個';
+    if (!name) { showToast('アイテム名を入力してください'); return; }
+    const entry = { id: 'local_' + Date.now(), name, qty, bought: false };
+    if (isFirebaseReady()) {
+      const { db, collection, addDoc } = fb();
+      try {
+        const docRef = await addDoc(collection(db, 'shopping'), entry);
+        entry.id = docRef.id;
+      } catch(e) {}
+    }
+    shoppingList.push(entry);
+    localStorage.setItem('curry_shopping', JSON.stringify(shoppingList));
+    showToast('追加しました');
+    renderBudget();
+  }
+
+  async function deleteShopItem(id) {
+    shoppingList = shoppingList.filter(i => i.id !== id);
+    localStorage.setItem('curry_shopping', JSON.stringify(shoppingList));
+    if (isFirebaseReady() && !id.startsWith('local_') && !id.startsWith('sl')) {
+      const { db, doc, deleteDoc } = fb();
+      try { await deleteDoc(doc(db, 'shopping', id)); } catch(e) {}
+    }
+    renderBudget();
+  }
+
+  // ========================================================
+  // ④ タスク・メモタブ
+  // ========================================================
+  function showTasks() {
+    currentView = 'tasks';
+    updateNav('nav-tasks', '📋 タスク・メモ', '準備期間 やること管理');
+    loadTasksData().then(() => renderTasks());
+  }
+
+  async function loadTasksData() {
+    if (!isFirebaseReady()) {
+      taskList = JSON.parse(localStorage.getItem('curry_tasks') || '[]');
+      memoList = JSON.parse(localStorage.getItem('curry_memos') || '[]');
+      return;
+    }
+    const { db, collection, getDocs, query, orderBy } = fb();
+    try {
+      const tSnap = await getDocs(query(collection(db, 'tasks'), orderBy('createdAt', 'desc')));
+      taskList = tSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const mSnap = await getDocs(query(collection(db, 'memos'), orderBy('createdAt', 'desc')));
+      memoList = mSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(e) {
+      taskList = JSON.parse(localStorage.getItem('curry_tasks') || '[]');
+      memoList = JSON.parse(localStorage.getItem('curry_memos') || '[]');
+    }
+  }
+
+  let tasksTab = 'task'; // 'task' | 'memo'
+
+  function renderTasks() {
+    const app = document.getElementById('app');
+    const todo = taskList.filter(t => t.status === 'todo');
+    const doing = taskList.filter(t => t.status === 'doing');
+    const done = taskList.filter(t => t.status === 'done');
+
+    function taskCardHtml(t) {
+      return `<div class="task-card ${t.status}" id="task_${t.id}">
+        <span class="task-status-badge badge-${t.status}">${t.status === 'todo' ? '未着手' : t.status === 'doing' ? '進行中' : '完了'}</span>
+        <div class="task-title ${t.status === 'done' ? 'done-text' : ''}">${t.title}</div>
+        ${t.detail ? `<div style="font-size:13px;color:var(--apple-sub-text);line-height:1.5;margin-top:4px;">${t.detail}</div>` : ''}
+        ${t.assignee ? `<div style="font-size:12px;color:var(--apple-sub-text);margin-top:6px;">担当: ${t.assignee}</div>` : ''}
+        <div class="task-actions">
+          ${t.status !== 'todo' ? `<button class="btn-todo" onclick="updateTask('${t.id}','todo')">未着手に戻す</button>` : ''}
+          ${t.status !== 'doing' ? `<button class="btn-doing" onclick="updateTask('${t.id}','doing')">進行中</button>` : ''}
+          ${t.status !== 'done' ? `<button class="btn-done" onclick="updateTask('${t.id}','done')">完了！</button>` : ''}
+          <button class="btn-del" onclick="deleteTask('${t.id}')">削除</button>
+        </div>
+      </div>`;
+    }
+
+    const memoHtml = memoList.length === 0
+      ? '<div class="empty-state"><i data-lucide="message-square" size="36" style="display:block;margin:0 auto 12px;"></i>まだ投稿がありません</div>'
+      : memoList.map(m => `
+          <div class="memo-post">
+            <div class="memo-author">${m.author || '匿名'}</div>
+            <div class="memo-content">${escapeHtml(m.content)}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+              <span class="memo-time">${m.time || ''}</span>
+              <button onclick="deleteMemo('${m.id}')" style="background:none;border:none;color:var(--apple-sub-text);cursor:pointer;font-size:12px;">削除</button>
+            </div>
+          </div>`).join('');
+
+    app.innerHTML = `
+      <div style="padding:4px 0 8px;">
+        <!-- タブ切替 -->
+        <div style="display:flex;background:rgba(0,0,0,0.06);border-radius:12px;padding:3px;margin-bottom:16px;">
+          <button onclick="switchTaskTab('task')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:0.2s;background:${tasksTab==='task'?'var(--card-bg)':'transparent'};color:${tasksTab==='task'?'var(--accent-orange)':'var(--apple-sub-text)'};">
+            📋 タスク (${taskList.length})
+          </button>
+          <button onclick="switchTaskTab('memo')" style="flex:1;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:0.2s;background:${tasksTab==='memo'?'var(--card-bg)':'transparent'};color:${tasksTab==='memo'?'var(--accent-orange)':'var(--apple-sub-text)'};">
+            💬 アイデアメモ (${memoList.length})
+          </button>
+        </div>
+
+        ${tasksTab === 'task' ? `
+          <!-- タスク追加 -->
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;margin-bottom:12px;">＋ タスクを追加</div>
+            <input type="text" id="task-title" placeholder="タスク名（例: ナン生地を前日に仕込む）" style="margin-bottom:8px;">
+            <input type="text" id="task-detail" placeholder="詳細メモ（任意）" style="margin-bottom:8px;">
+            <input type="text" id="task-assignee" placeholder="担当者名（任意）" style="margin-bottom:10px;">
+            <button class="primary-btn" onclick="addTask()">タスクを追加</button>
+          </div>
+
+          <!-- 進行中 -->
+          ${doing.length > 0 ? `<div class="section-title" style="color:var(--accent-orange);">🔥 進行中 (${doing.length})</div>${doing.map(taskCardHtml).join('')}` : ''}
+
+          <!-- 未着手 -->
+          ${todo.length > 0 ? `<div class="section-title">⬜ 未着手 (${todo.length})</div>${todo.map(taskCardHtml).join('')}` : ''}
+
+          <!-- 完了 -->
+          ${done.length > 0 ? `<div class="section-title" style="color:var(--apple-green);">✅ 完了 (${done.length})</div>${done.map(taskCardHtml).join('')}` : ''}
+
+          ${taskList.length === 0 ? `<div class="empty-state"><i data-lucide="check-square" size="36" style="display:block;margin:0 auto 12px;"></i>タスクがありません</div>` : ''}
+        ` : `
+          <!-- メモ投稿 -->
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;margin-bottom:12px;">💬 アイデア・共有メモ</div>
+            <input type="text" id="memo-author" placeholder="名前（空欄で匿名）" style="margin-bottom:8px;">
+            <textarea id="memo-content" placeholder="アイデアや連絡事項を自由に書いてください！"></textarea>
+            <button class="primary-btn" onclick="addMemo()">投稿する</button>
+          </div>
+          ${memoHtml}
+        `}
+      </div>`;
+    lucide.createIcons();
+  }
+
+  function switchTaskTab(tab) { tasksTab = tab; renderTasks(); }
+  function escapeHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  async function addTask() {
+    const title = document.getElementById('task-title').value.trim();
+    if (!title) { showToast('タスク名を入力してください'); return; }
+    const detail = document.getElementById('task-detail').value.trim();
+    const assignee = document.getElementById('task-assignee').value.trim();
+    const entry = { title, detail, assignee, status: 'todo', createdAt: new Date().toISOString() };
+    if (isFirebaseReady()) {
+      const { db, collection, addDoc, serverTimestamp } = fb();
+      try {
+        const docRef = await addDoc(collection(db, 'tasks'), { ...entry, createdAt: serverTimestamp() });
+        entry.id = docRef.id;
+      } catch(e) { entry.id = 'local_' + Date.now(); }
+    } else { entry.id = 'local_' + Date.now(); }
+    taskList.unshift(entry);
+    localStorage.setItem('curry_tasks', JSON.stringify(taskList));
+    showToast('タスクを追加しました');
+    renderTasks();
+  }
+
+  async function updateTask(id, status) {
+    const task = taskList.find(t => t.id === id);
+    if (!task) return;
+    task.status = status;
+    localStorage.setItem('curry_tasks', JSON.stringify(taskList));
+    if (isFirebaseReady() && !id.startsWith('local_')) {
+      const { db, doc, updateDoc } = fb();
+      try { await updateDoc(doc(db, 'tasks', id), { status }); } catch(e) {}
+    }
+    renderTasks();
+  }
+
+  async function deleteTask(id) {
+    if (!confirm('このタスクを削除しますか？')) return;
+    taskList = taskList.filter(t => t.id !== id);
+    localStorage.setItem('curry_tasks', JSON.stringify(taskList));
+    if (isFirebaseReady() && !id.startsWith('local_')) {
+      const { db, doc, deleteDoc } = fb();
+      try { await deleteDoc(doc(db, 'tasks', id)); } catch(e) {}
+    }
+    showToast('削除しました');
+    renderTasks();
+  }
+
+  async function addMemo() {
+    const content = document.getElementById('memo-content').value.trim();
+    if (!content) { showToast('内容を入力してください'); return; }
+    const author = document.getElementById('memo-author').value.trim() || '匿名';
+    const now = new Date();
+    const time = (now.getMonth()+1) + '/' + now.getDate() + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const entry = { content, author, time, createdAt: new Date().toISOString() };
+    if (isFirebaseReady()) {
+      const { db, collection, addDoc, serverTimestamp } = fb();
+      try {
+        const docRef = await addDoc(collection(db, 'memos'), { ...entry, createdAt: serverTimestamp() });
+        entry.id = docRef.id;
+      } catch(e) { entry.id = 'local_' + Date.now(); }
+    } else { entry.id = 'local_' + Date.now(); }
+    memoList.unshift(entry);
+    localStorage.setItem('curry_memos', JSON.stringify(memoList));
+    showToast('投稿しました！');
+    renderTasks();
+  }
+
+  async function deleteMemo(id) {
+    if (!confirm('この投稿を削除しますか？')) return;
+    memoList = memoList.filter(m => m.id !== id);
+    localStorage.setItem('curry_memos', JSON.stringify(memoList));
+    if (isFirebaseReady() && !id.startsWith('local_')) {
+      const { db, doc, deleteDoc } = fb();
+      try { await deleteDoc(doc(db, 'memos', id)); } catch(e) {}
+    }
+    renderTasks();
+  }
+
+  // ========================================================
+  // ⑤ マニュアル・Q&A タブ
+  // ========================================================
+  const FAQ_DATA = [
+    {
+      tag: 'tag-food', tagLabel: '🍛 食品',
+      q: 'ナンが冷めているとクレームが来たら？',
+      a: '①まず「申し訳ございません」と謝罪してください。②その場でナンをナン焼き担当に渡し、熱々に温め直します（30秒程度）。③温めたものと交換してください。④カレーも合わせて温め直しが必要な場合は厨房担当に声をかけてください。⑤記録担当に状況を伝えてください。'
+    },
+    {
+      tag: 'tag-aupay', tagLabel: '💚 au PAY',
+      q: 'au PAYの決済画面が確認できなかったら？',
+      a: '①お客様に「決済が完了していますか？」と確認します。②お客様のスマホのau PAY残高履歴を見せてもらい、引き落とし済みかどうか確認します。③判断できない場合は「少々お待ちください」として、au PAYのQRコード担当（田中 陽斗）を呼んでください。④二重請求は絶対に避けてください。⑤万一トラブルになったらすぐに先生を呼ぶこと。'
+    },
+    {
+      tag: 'tag-aupay', tagLabel: '💚 au PAY',
+      q: 'QRコードが読み取れない・表示されないとき',
+      a: '①スマホの画面輝度を最大にします。②QRコードを印刷したラミネートを代わりに使います（バックアップをカバンに入れてあります）。③それでも無理な場合、近くの先生に現金払いへの切り替えを許可してもらってから対応してください。④QRが映らない原因はスマホの電池切れ・アプリ不具合が多いです。事前に充電確認を徹底してください。'
+    },
+    {
+      tag: 'tag-food', tagLabel: '🍛 食品',
+      q: 'カレーがなくなりそう / 料理ペースが追いつかないとき',
+      a: '①在庫が残り30食を切ったら必ずシフトリーダーに報告します。②入り口のメニューボードに「残り少ない」シールを貼ってください（シールはレジ横の箱の中）。③呼び込みの人は新規のお客様への声かけを一時停止します。④在庫ゼロになったらレジボタンは押さずに先生に連絡してください。'
+    },
+    {
+      tag: 'tag-trouble', tagLabel: '🚨 トラブル',
+      q: 'お客様がアレルギー反応を訴えたら？',
+      a: '①すぐに近くにいる先生・顧問を呼んでください（最優先）。②カレーには【乳製品・小麦・大豆】が含まれています。スパイスによりナッツアレルギーに注意が必要です。③絶対に「大丈夫です」とは言わないでください。④救護室の場所：〔各校の救護室の場所を記入してください〕。⑤症状が重い場合は迷わず119番通報。'
+    },
+    {
+      tag: 'tag-trouble', tagLabel: '🚨 トラブル',
+      q: '異物（髪の毛・虫など）が入っているとクレームが来た',
+      a: '①お客様に深くお詫びし、すぐに交換または返金の対応をしてください。②当該の皿・食品はその場で廃棄してビニール袋に保管してください（証拠として残す）。③シフトリーダーと担任の先生に即報告してください。④他のお客様には影響がないか確認してください。⑤状況によっては販売を一時停止する判断をしてください。'
+    },
+    {
+      tag: 'tag-ops', tagLabel: '📋 運営',
+      q: '売上金の管理・紛失が疑われるとき',
+      a: 'キャッシュレス（au PAY）のみの運用のため、現金は発生しません。au PAYの入金は後日まとめて担当者（顧問）の口座に振り込まれます。アプリの売上カウントとau PAYの管理画面の数字が合わない場合は、田中 陽斗 にすぐ連絡してください。'
+    },
+    {
+      tag: 'tag-ops', tagLabel: '📋 運営',
+      q: 'スタッフが急に体調不良で抜けなければならないとき',
+      a: '①シフトリーダー（田中 陽斗）に連絡してください。②休憩中のメンバーが代替に入ります。③顧問にも連絡を入れてください。④体調不良のスタッフは無理せず休憩させてください。保健室の場所を教えてあげてください。'
+    },
+    {
+      tag: 'tag-ops', tagLabel: '📋 運営',
+      q: 'ゴミ・廃棄物の処理はどこで？',
+      a: '燃えるゴミは正面玄関前の集積所（黄色い袋）に捨ててください。油は絶対に排水口に流さず、凝固剤を使って固めてから燃えるゴミとして捨ててください（凝固剤は厨房の棚の上にあります）。容器・ラップなどのプラスチックは別の袋に分けてください。'
+    }
+  ];
+
+  let openFaqs = new Set();
+
+  function showManual() {
+    currentView = 'manual';
+    updateNav('nav-manual', '📖 マニュアル', '当日トラブル対応 & 設定');
+    renderManual();
+  }
+
+  function renderManual() {
+    const app = document.getElementById('app');
+    const faqHtml = FAQ_DATA.map((faq, i) => `
+      <div class="faq-item" id="faq_${i}">
+        <div class="faq-q" onclick="toggleFaq(${i})">
+          <div>
+            <span class="manual-tag ${faq.tag}">${faq.tagLabel}</span>
+            <div class="faq-q-text">${faq.q}</div>
+          </div>
+          <i data-lucide="chevron-down" size="18" class="faq-chevron ${openFaqs.has(i)?'open':''}"></i>
+        </div>
+        <div class="faq-a ${openFaqs.has(i)?'open':''}">
+          ${faq.a.replace(/①|②|③|④|⑤/g, m => `<strong style="color:var(--accent-orange)">${m}</strong>`)}
+        </div>
+      </div>`).join('');
+
+    // 設定パネル
+    const isDark = appSettings.darkMode;
+    const settingsHtml = `
+      <div class="settings-section-title" style="margin-top:24px;">⚙️ アプリ設定</div>
+      <div class="settings-row">
+        <div class="settings-item" onclick="toggleDark()">
+          <div class="settings-item-icon" style="background:rgba(99,99,102,0.15);">
+            <i data-lucide="${isDark ? 'sun' : 'moon'}" size="18" style="color:#636366;"></i>
+          </div>
+          <div style="flex:1;">
+            <div class="settings-item-title">ダークモード</div>
+            <div class="settings-item-sub">画面の明るさを調整</div>
+          </div>
+          <div class="toggle-switch ${isDark?'on':''}" onclick="event.stopPropagation();toggleDark()">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+        <div class="settings-item" style="cursor:default;">
+          <div class="settings-item-icon" style="background:rgba(255,107,43,0.1);">
+            <i data-lucide="palette" size="18" style="color:var(--accent-orange);"></i>
+          </div>
+          <div style="flex:1;">
+            <div class="settings-item-title">テーマカラー</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="theme-btn ${!appSettings.theme||appSettings.theme==='light'?'active':''}" style="background:var(--accent-orange);" onclick="setTheme('light')"></button>
+            <button class="theme-btn ${appSettings.theme==='dark'?'active':''}" style="background:#1c1c1e;" onclick="setTheme('dark_force')"></button>
+          </div>
+        </div>
+        <div class="settings-item" onclick="clearAppData()">
+          <div class="settings-item-icon" style="background:rgba(255,59,48,0.1);">
+            <i data-lucide="trash-2" size="18" style="color:var(--apple-red);"></i>
+          </div>
+          <div style="flex:1;">
+            <div class="settings-item-title" style="color:var(--apple-red);">ローカルデータを削除</div>
+            <div class="settings-item-sub">設定・チェック状態をリセット</div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-item" style="cursor:default;">
+          <div class="settings-item-icon" style="background:rgba(255,107,43,0.1);">
+            <i data-lucide="info" size="18" style="color:var(--accent-orange);"></i>
+          </div>
+          <div>
+            <div class="settings-item-title">アプリバージョン</div>
+            <div class="settings-item-sub">カレー部 文化祭アプリ v1.0</div>
+          </div>
+        </div>
+      </div>`;
+
+    app.innerHTML = `
+      <div style="padding:4px 0 8px;">
+        <!-- 緊急連絡 -->
+        <div class="emergency-card" onclick="callEmergency()">
+          <div style="width:46px;height:46px;background:rgba(255,255,255,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i data-lucide="phone-call" size="22"></i>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;opacity:0.85;margin-bottom:2px;">EMERGENCY</div>
+            <div style="font-size:17px;font-weight:800;">緊急時 → すぐ先生を呼ぶ</div>
+            <div style="font-size:13px;opacity:0.85;margin-top:2px;">顧問連絡先をタップして確認</div>
+          </div>
+        </div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--apple-sub-text);margin-bottom:12px;">タップして対応方法を確認</div>
+        ${faqHtml}
+        ${settingsHtml}
+      </div>`;
+    lucide.createIcons();
+  }
+
+  function toggleFaq(i) {
+    if (openFaqs.has(i)) openFaqs.delete(i);
+    else openFaqs.add(i);
+    renderManual();
+  }
+
+  function callEmergency() {
+    alert('緊急時はすぐに近くの先生・顧問を呼んでください！\n\n顧問: ○○先生（各自で連絡先を確認してください）\n\nアレルギー・怪我など医療的緊急事態は 119番 へ');
+  }
+
+  function toggleDark() {
+    appSettings.darkMode = !appSettings.darkMode;
+    applyTheme();
+    renderManual();
+    showToast(appSettings.darkMode ? '🌙 ダークモード ON' : '☀️ ライトモード ON');
+  }
+
+  function setTheme(theme) {
+    appSettings.theme = theme;
+    applyTheme();
+    renderManual();
+  }
+
+  function clearAppData() {
+    if (!confirm('ローカルデータ（設定・衛生チェック）を削除しますか？\nFirebase上のデータは削除されません。')) return;
+    localStorage.removeItem('curry_hygiene');
+    localStorage.removeItem('curry_selected_member');
+    localStorage.removeItem('curry_tasks');
+    localStorage.removeItem('curry_memos');
+    localStorage.removeItem('curry_budget');
+    localStorage.removeItem('curry_shopping');
+    hygieneState = {};
+    selectedMember = '';
+    taskList = [];
+    memoList = [];
+    budgetList = [];
+    shoppingList = [];
+    showToast('ローカルデータを削除しました');
+    renderManual();
+  }
+
+  // ========================================================
+  // 初期化
+  // ========================================================
+  function init() {
+    applyTheme();
+    showRegister();
+    lucide.createIcons();
+    // Firebaseが準備できたらリアルタイム監視開始
+    document.addEventListener('firebase-ready', () => {
+      if (currentView === 'register') subscribeStock();
+    });
+  }
+
+  // DOMが読み込まれたら初期化
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  </script>
+</body>
+</html>
